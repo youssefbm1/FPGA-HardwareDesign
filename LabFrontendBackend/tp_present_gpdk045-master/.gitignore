@@ -1,0 +1,13 @@
+.simvision
+work
+work*
+results
+reports
+.sim
+*.log
+*.X
+*.swp
+*.swo
+*.cdslck
+.sim*
+.cadence

@@ -1,0 +1,86 @@
+1. Comparioson between Avalon & Wishbone protocol
+
+- Functionality
+
+Avalon: Primarily designed for on-chip communication within an FPGA or ASIC. It focuses on connecting internal components (masters and slaves) on a single die.
+Wishbone: Open-source standard for both on-chip and off-chip communication. It's more versatile, allowing communication between various components within a system, including FPGAs, ASICs, and external peripherals.
+
+-Master-Slave Architecture:
+
+Avalon: Distributed arbitration. Slaves can participate in the arbitration process to determine which master gets access to the bus. This can be beneficial for prioritizing critical data transfers.
+Wishbone: Centralized arbitration. A dedicated arbiter component decides which master gains access to the bus. This approach offers simpler design but might be less flexible for complex prioritization needs.
+
+- Signal Protocols:
+
+Avalon: Uses separate addr, data, and control lines for clear separation of functionalities. This can be more efficient for high-performance applications.
+Wishbone: Employs a tri-state data bus for some signals. This can reduce pin count but might require additional logic for driving the bus in certain scenarios.
+
+- Complexity:
+
+Avalon: Generally considered more complex due to its distributed arbitration and separate signal lines. This complexity can impact development time and resource utilization.
+Wishbone: Offers a simpler design with centralized arbitration and a tri-state data bus. This can be advantageous for resource-constrained applications.
+
+2. Handshake & Differrent signals 
+
+- Handshake Mechanism:
+
+Bus protocols rely on a handshake mechanism to ensure proper communication between masters (initiators) and slaves (targets) on the bus. Here's a simplified breakdown of a common handshake sequence:
+
+Master initiates the transfer: The master asserts signals indicating the type of transfer (read/write), addr of the target device, and potentially data to be written.
+Slave acknowledges: The slave acknowledges receipt of the addr and control information by asserting a designated signal.
+Data transfer : In case of a write operation, the master asserts the data onto the data bus after receiving the slave's acknowledgement.
+Transfer completion: The master and slave de-assert their respective control signals, indicating the completion of the transfer.
+
+- Common signals involved in bus protocols:
+
+Clock (CLK): Provides a synchronized timing reference for all devices on the bus.
+Reset (RST): Resets the bus interface to a known initial state.
+Addr lines (ADDR): Carry the memory addr or peripheral location for the transfer.
+Control signals: Indicate the type of transfer (read/write), data validity, and other control information.
+Data lines (DATA): Carry the data to be written or read during a transfer.
+Busy (BUSY): Asserted by the slave to indicate it's busy and cannot accept new requests from the master.
+Select (CS): Indicates a specific slave device is being targeted by the master.
+Ready (READY): Asserted by the slave to signal it's ready to accept data or complete the transfer.
+Grant (GRANT): Asserted by the arbiter (if present) to indicate which master has been granted access to the bus.
+
+
+3. Sync RAM using Avalon in Verilog:
+
+module RAM (
+    input logic clk,
+    input logic read,
+    input logic write,
+    input logic reset,
+    output logic rdata,
+    output logic wdata,
+    input logic [31:0] data,
+    input logic [31:0] addr);
+
+    logic [31:0] memory [0:255]; 
+    logic [31:0] read_data;
+
+    // Reading Op
+    always_ff @(posedge clk or negedge reset) begin
+        if (!reset) begin
+            rdata <= 1'b0;        
+            read_data <= 32'h0;   
+        end else if (read) begin
+            read_data <= memory[addr];  // Read data from memory
+            rdata <= 1'b1;               // Set read data valid
+        end else begin
+            rdata <= 1'b0;               // Unset read data valid
+    end
+
+    // Writing Op
+    always_ff @(posedge clk or negedge reset) begin
+        if (!reset) begin
+            wdata <= 1'b0;        
+        end else if (write) begin
+            memory[addr] <= data; // Write data to memory
+            wdata <= 1'b1;        // Set write data valid
+        end else begin
+            wdata <= 1'b0;        // Unset write data valid
+        end
+    end
+
+endmodule
